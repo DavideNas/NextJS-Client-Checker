@@ -4,18 +4,22 @@ import { findFiles, checkForUseClient } from './analyzer';
 export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('nextjs.checkUseClient', async () => {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if(!workspaceFolders) {
-			vscode.window.showErrorMessage("Apri un progetto Next.js prima di eseguire l'analisi");
+		if (!workspaceFolders) {
+			vscode.window.showErrorMessage("Please open a Next.js project before running the analysis");
 			return;
 		}
 		const projectPath = workspaceFolders[0].uri.fsPath;
+
+		// Find all TSX files in the project
 		const tsxFiles = findFiles(projectPath);
+
+		// Check components for the 'use client' directive
 		const missingUseClient = tsxFiles.map(checkForUseClient).filter(Boolean);
 
-		if(missingUseClient.length > 0) {
-			vscode.window.showWarningMessage(`I seguenti componenti potrebbero necessitare 'use client':\n${missingUseClient.join('\n')}`);
+		if (missingUseClient.length > 0) {
+			vscode.window.showWarningMessage(`The following components may need the 'use client' directive:\n${missingUseClient.join('\n')}`);
 		} else {
-			vscode.window.showInformationMessage("Tutti i componenti sono configurati correttamente.");
+			vscode.window.showInformationMessage("All components are correctly configured.");
 		}
 	});
 
@@ -23,3 +27,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+

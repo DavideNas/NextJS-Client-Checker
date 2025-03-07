@@ -1,24 +1,28 @@
 {
   "name": "next-client-check",
-  "displayName": "next client check",
+  "displayName": "Next Client Check",
   "description": "A tool to check if a component needs the 'use client' directive",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.98.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:next-client-check.checkUseClient"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "next-client-check.helloWorld",
-        "title": "Hello World"
+        "command": "next-client-check.checkUseClient",
+        "title": "Check if components need 'use client' directive"
       }
     ]
   },
+  "publisher": "brickpointgames",
+  "icon": "images/logo.png",
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
@@ -46,5 +50,9 @@
     "typescript": "^5.7.3",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavideNas/NextJS-Client-Checker.git"
   }
 }
