@@ -12,14 +12,13 @@
 
 ## **🚀 Usage**
 
-1️⃣ After installation, press **Ctrl+Shift+P** (or **Cmd+Shift+P** on macOS) to open the **Command Palette**.
-
-2️⃣ Run the command:  
+1️⃣ After installation, press **Ctrl+Shift+U** (or **Cmd+Shift+U** on macOS) to run the extension.  
+Alternatively, you can open the **Command Palette** with **Ctrl+Shift+P** (or **Cmd+Shift+P** on macOS) and type:  
  **`Next.js: Check for 'use client'`**
 
-3️⃣ The extension will scan through your Next.js components and give you a heads-up if it detects any components that need the `'use client'` directive.
+2️⃣ The extension will scan through your Next.js components and give you a heads-up if it detects any components that need the `'use client'` directive.
 
-4️⃣ If any components are flagged, the extension will notify you at the bottom of the editor, advising you to add the directive to ensure proper client-side execution.
+3️⃣ If any components are flagged, the extension will notify you at the bottom of the editor, advising you to add the directive to ensure proper client-side execution.
 
 ## **🔧 How It Works**
 
