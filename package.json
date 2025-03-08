@@ -2,7 +2,7 @@
   "name": "next-client-check",
   "displayName": "Next Client Check",
   "description": "A tool to check if a component needs the 'use client' directive",
-  "version": "0.0.39",
+  "version": "0.0.41",
   "engines": {
     "vscode": "^1.98.0"
   },

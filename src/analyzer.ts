@@ -86,7 +86,7 @@ export function checkForUseClient(filePath: string): string | null {
     // Using helper functions for modularity
     if (hasReactHook(normalizedContent) || hasClientGlobals(normalizedContent) || 
         hasClientEvents(normalizedContent) || hasDynamicFunctions(normalizedContent)) {
-        return '\\' + path.relative(process.cwd(), filePath).replace(/\\/g, '/');
+        return path.relative(process.cwd(), filePath).replace(/\\/g, path.sep);
     }
 
     return null;
