@@ -2,7 +2,7 @@
   "name": "next-client-check",
   "displayName": "Next Client Check",
   "description": "A tool to check if a component needs the 'use client' directive",
-  "version": "0.0.16",
+  "version": "0.0.39",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:next-client-check.checkUseClient"
+    "onCommand:nextjs.checkUseClient"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -18,14 +18,6 @@
       {
         "command": "nextjs.checkUseClient",
         "title": "Check if components need 'use client' directive"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "nextjs.checkUseClient",
-        "key": "ctrl+shift+u",
-        "mac": "cmd+shift+u",
-        "when": "editorTextFocus"
       }
     ]
   },

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
 
 // Common React hooks that require the 'use client' directive
 const HOOKS = ['useState', 'useEffect', 'useContext', 'useReducer'];
@@ -14,20 +13,50 @@ const CLIENT_EVENTS = ['onClick', 'onChange', 'onSubmit', 'onMouseEnter', 'onMou
 // Next.js server-side specific functions
 const SERVER_FUNCTIONS = ['getServerSideProps', 'getStaticProps', 'getInitialProps'];
 
-// List of functions that generate dynamic values (e.g., Math.random(), Date.now())
+// Dynamic Functions which run only on client components
 const DYNAMIC_FUNCTIONS = ['Math.random()', 'Date.now()'];
+
+// List of directories to exclude from the search
+const EXCLUDED_FOLDERS = ['node_modules', '.next', '.git', 'dist'];
+
+// Funzione per rimuovere i commenti ma escludere quelli con 'use client'
+function removeComments(content: string): string {
+    // Rimuove i commenti su una singola riga
+    content = content.replace(/\/\/.*$/gm, '');
+    // Rimuove i commenti multilinea, ma esclude quelli che contengono 'use client'
+    content = content.replace(/\/\*[\s\S]*?\*\//g, (match) => {
+        return match.includes('use client') ? match : '';
+    });
+    return content;
+}
+
+// Funzione che filtra espressioni nei commenti che potrebbero sembrare la direttiva
+function filterClientDirectivesInComments(content: string): string {
+    // Filtro per rimuovere espressioni che potrebbero sembrare 'use client' all'interno dei commenti
+    content = content.replace(/\/\*[^*]*\buse client\b[^*]*\*\//g, '');
+    return content;
+}
 
 // Function that checks if the component needs the 'use client' directive
 export function checkForUseClient(filePath: string): string | null {
     const content = fs.readFileSync(filePath, 'utf-8');
 
+    // Normalize the 'use client' check to handle both single and double quotes
+    let normalizedContent = content.replace(/['"]use client['"]/g, "'use client'");
+
+    // Rimuove i commenti dal contenuto del file
+    normalizedContent = removeComments(normalizedContent);
+
+    // Rimuove anche eventuali 'use client' all'interno dei commenti
+    normalizedContent = filterClientDirectivesInComments(normalizedContent);
+
     // If 'use client' is already present, no need for further checks
-    if (content.includes("'use client'")) {
-        return null;
+    if (normalizedContent.includes("'use client'")) {
+        return null; // Skip if the directive is already present
     }
 
     // Check for server-side functions in the file (Next.js specific)
-    const isServerComponent = SERVER_FUNCTIONS.some(fn => content.includes(fn));
+    const isServerComponent = SERVER_FUNCTIONS.some(fn => normalizedContent.includes(fn));
 
     // If the file contains server-side logic, we skip the check
     if (isServerComponent) {
@@ -35,30 +64,39 @@ export function checkForUseClient(filePath: string): string | null {
     }
 
     // Check if any React hooks are used in the file
-    const useReactHook = HOOKS.some(hook => content.includes(hook));
+    const useReactHook = HOOKS.some(hook => normalizedContent.includes(hook));
 
     // Check if any client-side globals are used (e.g., window, document)
-    const usesClientGlobals = CLIENT_GLOBALS.some(global => content.includes(global));
+    const usesClientGlobals = CLIENT_GLOBALS.some(global => normalizedContent.includes(global));
 
     // Check if any client-side event handlers are used (e.g., onClick, onChange)
-    const usesClientEvents = CLIENT_EVENTS.some(event => content.includes(event));
+    const usesClientEvents = CLIENT_EVENTS.some(event => normalizedContent.includes(event));
 
-    // Check if any dynamic functions (Math.random(), Date.now()) are used
-    const usesDynamicFunctions = DYNAMIC_FUNCTIONS.some(fn => content.includes(fn));
+    // Check if the file contains dynamic functions that need 'use client' directive
+    const usesDynamicFunctions = DYNAMIC_FUNCTIONS.some(fn => normalizedContent.includes(fn));
 
-    // Check if the file contains a component that might require 'use client' directive
-    const containsServerComponent = content.includes('import') && content.includes('getServerSideProps');
+    // Check for a pure component (no hooks or client-side logic)
+    const isPureComponent = normalizedContent.includes('export default') && 
+                            !useReactHook && 
+                            !usesClientGlobals && 
+                            !usesClientEvents && 
+                            !usesDynamicFunctions;
 
-    // If the file contains any client-side elements or a server-side component inside, return the file path (indicating it needs 'use client')
-    if (useReactHook || usesClientGlobals || usesClientEvents || usesDynamicFunctions || containsServerComponent) {
-        return path.relative(process.cwd(), filePath);
+    // If it is a pure component, return null (it doesn't need 'use client')
+    if (isPureComponent) {
+        return null;
+    }
+
+    // If the file contains any client-side elements or dynamic functions, return the optimized file path
+    if (useReactHook || usesClientGlobals || usesClientEvents || usesDynamicFunctions) {
+        return '\\' + path.relative(process.cwd(), filePath).replace(/\\/g, '/');
     }
 
     return null;
 }
 
 // Function that finds all .tsx files in a directory
-export function findFiles(dir: string): string[] {
+export async function findFiles(dir: string): Promise<string[]> {
     let results: string[] = [];
     const files = fs.readdirSync(dir);
 
@@ -66,37 +104,14 @@ export function findFiles(dir: string): string[] {
         const fullPath = path.join(dir, file);
         const stat = fs.statSync(fullPath);
 
-        // Ignora le cartelle node_modules e .next
-        if (file === 'node_modules' || file === '.next') {
-            continue;
-        }
+        if (EXCLUDED_FOLDERS.includes(file)) { continue; }
 
         if (stat.isDirectory()) {
-            results = results.concat(findFiles(fullPath));
+            results = results.concat(await findFiles(fullPath));
         } else if (fullPath.endsWith('.tsx') || fullPath.endsWith('.ts')) {
             results.push(fullPath);
         }
     }
+
     return results;
-}
-
-// Function to create or append to the log file with the list of files needing 'use client'
-export function logToFile(missingUseClient: string[]) {
-    const logFilePath = path.join(process.cwd(), 'use-client-check-log.txt');
-    
-    let logContent = '';
-    if (missingUseClient.length > 0) {
-        logContent = `⚠️ The following components may need the 'use client' directive:\n${missingUseClient.join('\n')}\n\n`;
-    } else {
-        logContent = '✔️ All components are correctly configured.\n\n';
-    }
-
-    // Append to the log file
-    fs.appendFileSync(logFilePath, logContent, 'utf-8');
-
-    // Provide feedback to the user
-    vscode.window.showInformationMessage(`Log saved to ${logFilePath}`);
-    
-    // Optionally log to the console for quick reference
-    console.log(`Log saved to ${logFilePath}`);
 }
