@@ -37,6 +37,26 @@ function filterClientDirectivesInComments(content: string): string {
     return content;
 }
 
+// Helper function to check if any React hooks are present
+function hasReactHook(content: string): boolean {
+    return HOOKS.some(hook => content.includes(hook));
+}
+
+// Helper function to check if any client-side globals are used
+function hasClientGlobals(content: string): boolean {
+    return CLIENT_GLOBALS.some(global => content.includes(global));
+}
+
+// Helper function to check if any client-side event handlers are used
+function hasClientEvents(content: string): boolean {
+    return CLIENT_EVENTS.some(event => content.includes(event));
+}
+
+// Helper function to check if any dynamic functions are present
+function hasDynamicFunctions(content: string): boolean {
+    return DYNAMIC_FUNCTIONS.some(fn => content.includes(fn));
+}
+
 // Function that checks if the component needs the 'use client' directive
 export function checkForUseClient(filePath: string): string | null {
     const content = fs.readFileSync(filePath, 'utf-8');
@@ -63,32 +83,9 @@ export function checkForUseClient(filePath: string): string | null {
         return null;
     }
 
-    // Check if any React hooks are used in the file
-    const useReactHook = HOOKS.some(hook => normalizedContent.includes(hook));
-
-    // Check if any client-side globals are used (e.g., window, document)
-    const usesClientGlobals = CLIENT_GLOBALS.some(global => normalizedContent.includes(global));
-
-    // Check if any client-side event handlers are used (e.g., onClick, onChange)
-    const usesClientEvents = CLIENT_EVENTS.some(event => normalizedContent.includes(event));
-
-    // Check if the file contains dynamic functions that need 'use client' directive
-    const usesDynamicFunctions = DYNAMIC_FUNCTIONS.some(fn => normalizedContent.includes(fn));
-
-    // Check for a pure component (no hooks or client-side logic)
-    const isPureComponent = normalizedContent.includes('export default') && 
-                            !useReactHook && 
-                            !usesClientGlobals && 
-                            !usesClientEvents && 
-                            !usesDynamicFunctions;
-
-    // If it is a pure component, return null (it doesn't need 'use client')
-    if (isPureComponent) {
-        return null;
-    }
-
-    // If the file contains any client-side elements or dynamic functions, return the optimized file path
-    if (useReactHook || usesClientGlobals || usesClientEvents || usesDynamicFunctions) {
+    // Using helper functions for modularity
+    if (hasReactHook(normalizedContent) || hasClientGlobals(normalizedContent) || 
+        hasClientEvents(normalizedContent) || hasDynamicFunctions(normalizedContent)) {
         return '\\' + path.relative(process.cwd(), filePath).replace(/\\/g, '/');
     }
 
