@@ -63,7 +63,7 @@ export function checkForUseClient(filePath: string): string | null {
 
     // Normalize the 'use client' check to handle both single and double quotes
     let normalizedContent = content.replace(/['"]use client['"]/g, "'use client'");
-
+    
     // Rimuove i commenti dal contenuto del file
     normalizedContent = removeComments(normalizedContent);
 
@@ -86,7 +86,8 @@ export function checkForUseClient(filePath: string): string | null {
     // Using helper functions for modularity
     if (hasReactHook(normalizedContent) || hasClientGlobals(normalizedContent) || 
         hasClientEvents(normalizedContent) || hasDynamicFunctions(normalizedContent)) {
-        return path.relative(process.cwd(), filePath).replace(/\\/g, path.sep);
+        // Restituisci il path assoluto del file
+        return path.resolve(filePath);  // Usa path.resolve per ottenere il percorso assoluto
     }
 
     return null;
